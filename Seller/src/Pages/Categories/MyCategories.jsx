@@ -23,9 +23,7 @@ function MyCategories() {
         const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/seller-panel/categories/my-categories`, {
           headers: { stoken }
         });
-        console.log("API Response:", res.data);
         if (res.data.success) {
-          console.log("Categories data:", res.data.data);
           setData(res.data.data);
         }
       } catch (err) {
@@ -40,6 +38,13 @@ function MyCategories() {
   const filteredCategories = data.categories.filter(cat =>
     (cat.name || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Helper to handle both Cloudinary and Local images
+  const getImageUrl = (imgUrl) => {
+    if (!imgUrl) return null;
+    if (imgUrl.startsWith("http")) return imgUrl; // Cloudinary or external
+    return `${import.meta.env.VITE_BACKEND_URL}/${imgUrl.replace(/\\/g, "/")}`; // Local fallback
+  };
 
   return (
     <div className="p-6 space-y-6 animate-fadeIn">
@@ -99,22 +104,21 @@ function MyCategories() {
             <div key={i} className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-shadow">
               <div className="flex items-start gap-4">
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl flex items-center justify-center overflow-hidden">
-                  {category.image ? (
+                  {getImageUrl(category.image) ? (
                     <img
-                      src={category.image.startsWith('http') 
-                        ? category.image 
-                        : `${import.meta.env.VITE_BACKEND_URL}/${category.image.replace(/\\/g, "/")}`}
+                      src={getImageUrl(category.image)}
                       alt={category.name}
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        e.target.onerror = null;
                         e.target.style.display = 'none';
-                        e.target.parentElement.innerHTML = `<span class="text-2xl text-blue-400">${category.name?.charAt(0) || 'C'}</span>`;
+                        e.target.nextSibling.style.display = 'block';
                       }}
                     />
-                  ) : (
-                    <span className="text-2xl font-bold text-blue-400">{category.name?.charAt(0) || 'C'}</span>
-                  )}
+                  ) : null}
+                  {/* Fallback Initial if image missing or fails to load */}
+                  <span className="text-2xl font-bold text-blue-400" style={{ display: getImageUrl(category.image) ? 'none' : 'block' }}>
+                    {category.name?.charAt(0) || 'C'}
+                  </span>
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-800">{category.name}</h3>
@@ -134,38 +138,10 @@ function MyCategories() {
                   </div>
                 </div>
               </div>
-
-              {category.subcategories?.length > 0 && (
-                <div className="mt-4">
-                  <p className="text-xs text-gray-500 mb-2">Subcategories:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {category.subcategories.slice(0, 3).map((sub, j) => (
-                      <span key={j} className="px-2 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs">
-                        {sub}
-                      </span>
-                    ))}
-                    {category.subcategories.length > 3 && (
-                      <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs">
-                        +{category.subcategories.length - 3} more
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
           ))}
         </div>
       )}
-
-      {/* Tips */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
-        <h4 className="font-semibold text-blue-800 mb-2">📂 Category Tips</h4>
-        <ul className="text-sm text-blue-700 space-y-1">
-          <li>• List products in relevant categories for better visibility</li>
-          <li>• Use subcategories to help customers find products easily</li>
-          <li>• Popular categories get more traffic - focus on top performers</li>
-        </ul>
-      </div>
     </div>
   );
 }

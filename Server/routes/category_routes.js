@@ -3,16 +3,12 @@ import Category from "../model/Category.js";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { v2 as cloudinary } from "cloudinary"; // Import Cloudinary
 
 const router = express.Router();
 
-// Correct folder
+// Keep Multer for temporary local storage before uploading to Cloud
 const uploadDir = path.join(process.cwd(), "uploads/categories");
-
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -26,10 +22,11 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// Add category
+// POST: Add Category
 router.post("/addcategory", upload.single("image"), async (req, res) => {
   try {
     const { categoryname, altText } = req.body;
+
     if (!categoryname) {
       return res.status(400).json({ success: false, message: "Category name is required" });
     }
@@ -37,39 +34,51 @@ router.post("/addcategory", upload.single("image"), async (req, res) => {
       return res.status(400).json({ success: false, message: "Image is required" });
     }
 
-    const imagePath = `uploads/categories/${req.file.filename}`;
+    // 1. Upload to Cloudinary
+    const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+      folder: "categories",
+      resource_type: "image"
+    });
 
+    // 2. Save the Cloudinary URL
     const newCategory = new Category({
       categoryname,
       images: [{
-        url: imagePath,
+        url: uploadResult.secure_url,
         altText: altText || categoryname
       }]
     });
+
     await newCategory.save();
+
+    // Optional: Delete the local temp file to save space
+    if (fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
 
     res.status(200).json({
       success: true,
       message: "Category added successfully",
       category: newCategory,
     });
+
   } catch (error) {
+    console.error("Add Category Error:", error);
     res.status(500).json({ success: false, message: "Failed to add category" });
   }
 });
 
+// GET: Get All Categories
 router.get("/getcategories", async (req, res) => {
   try {
     const categories = await Category.find({});
-    console.log("Categories from DB:", JSON.stringify(categories, null, 2));
     res.status(200).json(categories);
   } catch (error) {
-    res
-      .status(500)
-      .json({ success: false, message: "Error fetching categories" });
+    res.status(500).json({ success: false, message: "Error fetching categories" });
   }
 });
 
+// GET: Get Single Category
 router.get("/getcategory/:id", async (req, res) => {
   try {
     const category = await Category.findById(req.params.id);
@@ -79,39 +88,28 @@ router.get("/getcategory/:id", async (req, res) => {
   }
 });
 
+// DELETE: Delete Category
 router.delete("/deletecategory/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const category = await Category.findById(id);
 
     if (!category) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Category not found" });
+      return res.status(404).json({ success: false, message: "Category not found" });
     }
 
-    // Delete all images in the images array
-    if (category.images && category.images.length > 0) {
-      category.images.forEach(img => {
-        const imagePath = path.join(__dirname, `../${img.url}`);
-        if (fs.existsSync(imagePath)) {
-          fs.unlinkSync(imagePath);
-        }
-      });
-    }
+    // Note: We are skipping local file deletion here since we are now using Cloudinary URLs.
+    // In a production app, you would use cloudinary.uploader.destroy() here.
 
     await Category.findByIdAndDelete(id);
 
-    res
-      .status(200)
-      .json({ success: true, message: "Category deleted successfully" });
+    res.status(200).json({ success: true, message: "Category deleted successfully" });
   } catch (error) {
-    res
-      .status(500)
-      .json({ success: false, message: "Failed to delete category" });
+    res.status(500).json({ success: false, message: "Failed to delete category" });
   }
 });
 
+// PUT: Update Category
 router.put("/updatecategory/:id", upload.single("image"), async (req, res) => {
   try {
     const { id } = req.params;
@@ -124,11 +122,21 @@ router.put("/updatecategory/:id", upload.single("image"), async (req, res) => {
     }
 
     if (req.file) {
-      const imagePath = `uploads/categories/${req.file.filename}`;
+      // Upload new image to Cloudinary
+      const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+        folder: "categories",
+        resource_type: "image"
+      });
+
       updateData.images = [{
-        url: imagePath,
+        url: uploadResult.secure_url,
         altText: altText || categoryname
       }];
+
+      // Clean up local temp file
+      if (fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
     }
 
     const updatedCategory = await Category.findByIdAndUpdate(id, updateData, {
@@ -136,22 +144,17 @@ router.put("/updatecategory/:id", upload.single("image"), async (req, res) => {
     });
 
     if (!updatedCategory) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Category not found" });
+      return res.status(404).json({ success: false, message: "Category not found" });
     }
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Category updated successfully",
-        category: updatedCategory,
-      });
+    res.status(200).json({
+      success: true,
+      message: "Category updated successfully",
+      category: updatedCategory,
+    });
   } catch (error) {
-    res
-      .status(500)
-      .json({ success: false, message: "Failed to update category" });
+    console.error("Update Error:", error);
+    res.status(500).json({ success: false, message: "Failed to update category" });
   }
 });
 

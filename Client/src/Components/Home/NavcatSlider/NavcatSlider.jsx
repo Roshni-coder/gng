@@ -29,17 +29,23 @@ const NavCatSlider = () => {
     }
   };
 
-  // ⭐ FIX: Function must be inside component BEFORE return
-  const getCategoryImageUrl = (imagePath) => {
-    if (!imagePath) return "/fallback-category.png";
+  // Helper function to construct image URL safely
+  const getCategoryImageUrl = (images) => {
+    // 1. Safety check: Ensure images array exists and has content
+    if (!images || images.length === 0 || !images[0].url) {
+      return "/fallback-category.png"; // Use a placeholder if missing
+    }
 
-    if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
+    const imagePath = images[0].url;
+
+    // 2. If it is a Cloudinary URL (http/https), return it directly
+    if (imagePath.startsWith("http") || imagePath.startsWith("https")) {
       return imagePath;
     }
 
+    // 3. Fallback for old local images: Append backend URL
     const base = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "") || "";
-    const cleanPath = imagePath.replace(/^\/+/, "");
-
+    const cleanPath = imagePath.replace(/^\/+/, ""); // Remove leading slash
     return `${base}/${cleanPath}`;
   };
 
@@ -69,9 +75,11 @@ const NavCatSlider = () => {
               >
                 <div className="text-center mt-2 cursor-pointer">
                   <img
-                    src={getCategoryImageUrl(category.image)}
+                    // Pass the entire images array to the helper
+                    src={getCategoryImageUrl(category.images)}
                     alt={category.categoryname}
-                    className="mx-auto sm:w-20 sm:h-20 rounded-full shadow-lg object-cover transition-transform hover:scale-105"
+                    // Added w-16 h-16 for mobile default size to prevent invisible images
+                    className="mx-auto sm:w-20 sm:h-20 w-16 h-16 rounded-full shadow-lg object-cover transition-transform hover:scale-105"
                   />
                   <h3 className="mt-2 hidden sm:block text-sm font-semibold text-gray-800">
                     {category.categoryname}

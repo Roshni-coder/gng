@@ -8,8 +8,9 @@ export const getMyCategories = async (req, res) => {
   try {
     const sellerId = req.sellerId || req.body.sellerId;
 
+    // Populate categoryname to access images
     const products = await addproductmodel.find({ sellerId })
-      .populate("categoryname", "categoryname image");
+      .populate("categoryname", "categoryname images");
 
     // Get all orders for this seller
     const orders = await orderModel.find({ "items.sellerId": sellerId });
@@ -19,10 +20,15 @@ export const getMyCategories = async (req, res) => {
       if (product.categoryname) {
         const catId = product.categoryname._id.toString();
         if (!categoryMap[catId]) {
+          // FIX: Extract the first image URL safely
+          const imgUrl = product.categoryname.images && product.categoryname.images.length > 0
+            ? product.categoryname.images[0].url
+            : "";
+
           categoryMap[catId] = {
             _id: catId,
             name: product.categoryname.categoryname,
-            image: product.categoryname.image,
+            image: imgUrl, // Send as a simple string to the client
             productCount: 0,
             totalStock: 0,
             avgPrice: 0,
@@ -63,8 +69,6 @@ export const getMyCategories = async (req, res) => {
       const totalPrice = cat.products.reduce((acc, p) => acc + p.price, 0);
       cat.avgPrice = cat.productCount > 0 ? (totalPrice / cat.productCount).toFixed(2) : 0;
     });
-
-    console.log("Sending Categories:", JSON.stringify(Object.values(categoryMap), null, 2));
 
     res.status(200).json({
       success: true,
@@ -193,7 +197,7 @@ export const getCategorySuggestions = async (req, res) => {
       .map(cat => ({
         _id: cat._id,
         name: cat.categoryname,
-        image: cat.image,
+        images: cat.images, // FIX: Pass the full images array
         reason: "Expand your product range"
       }));
 

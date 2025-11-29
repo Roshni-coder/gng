@@ -89,6 +89,12 @@ function CategoryList() {
     }
   };
 
+  const getImageUrl = (imgUrl) => {
+    if (!imgUrl) return "";
+    if (imgUrl.startsWith("http")) return imgUrl;
+    return `${import.meta.env.VITE_BACKEND_URL}/${imgUrl}`;
+  };
+
   return (
     <div className="products shadow-md rounded-md py-2 px-4 sm:px-5 bg-white">
       <div className="flex flex-col sm:flex-row justify-between pt-3 items-center gap-2">
@@ -118,10 +124,13 @@ function CategoryList() {
               <tr key={cat._id} className="border border-gray-200">
                 <td className="px-6 py-2 border">
                   <img
-                    src={`${import.meta.env.VITE_BACKEND_URL}/${cat.images && cat.images[0] ? cat.images[0].url : ''}`}
-                    alt={cat.images && cat.images[0] ? cat.images[0].altText : cat.categoryname}
+                    src={getImageUrl(cat.images?.[0]?.url)}
+                    alt={cat.categoryname}
                     className="w-[50px] h-[50px] object-cover rounded-full mx-auto cursor-pointer"
                     onClick={() => handleImageClick(cat._id)}
+                    onError={(e) => {
+                      e.target.style.display = 'none'; // hide if broken
+                    }}
                   />
                   <input
                     type="file"

@@ -6,11 +6,9 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Button, Divider } from "@mui/material";
 
-// Imports omitted for brevity
-
 function OrderSummery() {
   const navigate = useNavigate();
-  const { cartItems, setCartItems, fetchCart } = useContext(AppContext);
+  const { cartItems, setCartItems, fetchCart, clearCartAfterOrder } = useContext(AppContext);
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -51,13 +49,14 @@ function OrderSummery() {
       alert("Please select a shipping address before placing order.");
       throw new Error("Address missing");
     }
-    console.log(cartItems)
+
+    // Prepare items array
     const items = cartItems.map((item) => ({
       productId: item.product._id,
-      name: item.product.name,
+      name: item.product.name || item.product.title, // Handle both potential name fields
       quantity: item.quantity,
       price: item.product.price,
-      sellerId:item.product.sellerId
+      sellerId: item.product.sellerId
     }));
 
     return {
@@ -72,11 +71,9 @@ function OrderSummery() {
         alternatephone: address.alternatephone,
         address: address.address,
       },
-
       image: cartItems[0]?.product.image || "",
     };
   };
-  
 
   const checkoutHandler = async () => {
     const totalAmount = cartItems.reduce(
@@ -105,16 +102,23 @@ function OrderSummery() {
               orderData,
               { headers: { Authorization: `Bearer ${token}` } }
             );
-            if (res.data.success) navigate("/payment-success");
-            else alert("Order save failed.");
-          } catch {
+
+            if (res.data.success) {
+              // Clear cart and redirect on success
+              await clearCartAfterOrder();
+              navigate("/payment-success");
+            } else {
+              alert("Order save failed.");
+            }
+          } catch (error) {
+            console.error("Order save failed:", error);
             alert("Order save failed after payment.");
           }
         },
         prefill: {
-          name: "Roshni Bhoi",
-          email: "bhoiroshni847@gmail.com",
-          contact: "6354948868",
+          name: "User Name",
+          email: "user@example.com",
+          contact: "9999999999",
         },
         notes: { address: "Customer Address" },
         theme: { color: "#3399cc" },
@@ -122,13 +126,14 @@ function OrderSummery() {
 
       razor.open();
     } catch (error) {
+      console.error("Payment init failed:", error);
       alert("Payment failed to initialize.");
     }
   };
 
   return (
     <section className="section py-3">
-      <div className="container   !w-full lg:flex gap-4">
+      <div className="container !w-full lg:flex gap-4">
         <div className="leftPart lg:w-[70%] w-full">
           <div className="py-2 bg-white sm:px-3 px-2 border-b border-gray-200">
             <h2 className="text-black">Your Orders</h2>
@@ -151,8 +156,7 @@ function OrderSummery() {
                   />
                 ))}
                 <Divider />
-                <div className="flex  justify-end gap-3 m-4">
-                  
+                <div className="flex justify-end gap-3 m-4">
                   <Button
                     onClick={checkoutHandler}
                     className="w-[50%] md:w-[30%] !text-white pt-2 !bg-[#ff9f00] !rounded-none !h-[45px]"
@@ -172,7 +176,6 @@ function OrderSummery() {
       </div>
     </section>
   );
-
 }
 
 export default OrderSummery;
