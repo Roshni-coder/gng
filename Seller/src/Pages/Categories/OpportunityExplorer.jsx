@@ -8,10 +8,10 @@ function OpportunityExplorer() {
   const { setIsOpenAddProductPanel } = useContext(MyContext);
   const [activeTab, setActiveTab] = useState("browse");
   const [categories, setCategories] = useState([]);
-  const [suggestions, setSuggestions] = useState({ 
-    suggestions: [], 
-    trendingCategories: [], 
-    untappedCategories: [] 
+  const [suggestions, setSuggestions] = useState({
+    suggestions: [],
+    trendingCategories: [],
+    untappedCategories: []
   });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -42,7 +42,7 @@ function OpportunityExplorer() {
     }
   };
 
-  const filteredCategories = categories.filter(cat => 
+  const filteredCategories = categories.filter(cat =>
     cat.categoryname?.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -77,11 +77,10 @@ function OpportunityExplorer() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-5 py-3 rounded-t-xl font-medium transition-all ${
-              activeTab === tab.id 
-                ? "bg-blue-600 text-white" 
+            className={`flex items-center gap-2 px-5 py-3 rounded-t-xl font-medium transition-all ${activeTab === tab.id
+                ? "bg-blue-600 text-white"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
+              }`}
           >
             <tab.icon className="text-lg" />
             {tab.label}
@@ -120,23 +119,23 @@ function OpportunityExplorer() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {filteredCategories.map((cat) => {
-                    // Handle different image formats
-                    const imageUrl = cat.image 
-                      ? (cat.image.startsWith('http') 
-                          ? cat.image 
-                          : `${import.meta.env.VITE_BACKEND_URL}/${cat.image}`)
+                    // Handle different image formats - use new images array structure
+                    const imageUrl = cat.images && cat.images[0] && cat.images[0].url
+                      ? (cat.images[0].url.startsWith('http')
+                        ? cat.images[0].url
+                        : `${import.meta.env.VITE_BACKEND_URL}/${cat.images[0].url}`)
                       : null;
-                    
+
                     return (
-                      <div 
-                        key={cat._id} 
+                      <div
+                        key={cat._id}
                         className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg hover:border-blue-300 transition-all group"
                       >
                         <div className="flex items-center gap-4 mb-4">
                           <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
                             {imageUrl ? (
-                              <img 
-                                src={imageUrl} 
+                              <img
+                                src={imageUrl}
                                 alt={cat.categoryname}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
@@ -145,7 +144,7 @@ function OpportunityExplorer() {
                                 }}
                               />
                             ) : null}
-                            <div 
+                            <div
                               className={`w-full h-full items-center justify-center text-gray-400 bg-gradient-to-br from-blue-100 to-purple-100 ${imageUrl ? 'hidden' : 'flex'}`}
                             >
                               <span className="text-2xl font-bold text-blue-500">
@@ -158,7 +157,7 @@ function OpportunityExplorer() {
                             <p className="text-sm text-gray-500">Available to sell</p>
                           </div>
                         </div>
-                        
+
                         <button className="w-full py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 flex items-center justify-center gap-2 font-medium transition-colors">
                           <MdAdd /> Start Selling
                         </button>
@@ -192,7 +191,7 @@ function OpportunityExplorer() {
                 <p className="text-sm opacity-90 mb-4">
                   Based on your sales history and market trends, here are categories that could boost your sales.
                 </p>
-                
+
                 {suggestions.suggestions?.length === 0 ? (
                   <p className="text-white/75">Keep selling to get personalized recommendations!</p>
                 ) : (
@@ -222,22 +221,21 @@ function OpportunityExplorer() {
                   <FiTrendingUp className="text-green-500 text-xl" />
                   <h3 className="font-semibold text-gray-800">Trending Categories</h3>
                 </div>
-                
+
                 {suggestions.trendingCategories?.length === 0 ? (
                   <div className="p-8 text-center text-gray-500">No trending data available</div>
                 ) : (
                   <div className="divide-y divide-gray-100">
                     {suggestions.trendingCategories?.map((cat, i) => (
                       <div key={i} className="p-5 flex items-center gap-4 hover:bg-gray-50">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                          i === 0 ? 'bg-yellow-100 text-yellow-600' :
-                          i === 1 ? 'bg-gray-100 text-gray-600' :
-                          i === 2 ? 'bg-orange-100 text-orange-600' :
-                          'bg-blue-100 text-blue-600'
-                        }`}>
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${i === 0 ? 'bg-yellow-100 text-yellow-600' :
+                            i === 1 ? 'bg-gray-100 text-gray-600' :
+                              i === 2 ? 'bg-orange-100 text-orange-600' :
+                                'bg-blue-100 text-blue-600'
+                          }`}>
                           <span className="text-lg font-bold">#{i + 1}</span>
                         </div>
-                        
+
                         <div className="flex-1">
                           <h4 className="font-semibold text-gray-800">{cat.name}</h4>
                           <p className="text-sm text-gray-500 mt-0.5">
@@ -268,7 +266,7 @@ function OpportunityExplorer() {
                   <FiTarget className="text-purple-500 text-xl" />
                   <h3 className="font-semibold text-gray-800">Low Competition Opportunities</h3>
                 </div>
-                
+
                 {suggestions.untappedCategories?.length === 0 ? (
                   <div className="p-8 text-center text-gray-500">No suggestions available</div>
                 ) : (
@@ -277,22 +275,21 @@ function OpportunityExplorer() {
                       <div key={i} className="border border-gray-200 rounded-xl p-4 hover:shadow-lg transition-shadow">
                         <div className="flex items-center justify-between mb-3">
                           <h4 className="font-semibold text-gray-800">{cat.name}</h4>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            cat.competition === 'Low' ? 'bg-green-100 text-green-700' :
-                            cat.competition === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-red-100 text-red-700'
-                          }`}>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${cat.competition === 'Low' ? 'bg-green-100 text-green-700' :
+                              cat.competition === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-red-100 text-red-700'
+                            }`}>
                             {cat.competition} Competition
                           </span>
                         </div>
-                        
+
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
                             <span className="text-gray-500">Demand</span>
                             <div className="flex gap-0.5">
                               {[...Array(5)].map((_, j) => (
-                                <div 
-                                  key={j} 
+                                <div
+                                  key={j}
                                   className={`w-4 h-2 rounded ${j < cat.demandLevel ? 'bg-green-500' : 'bg-gray-200'}`}
                                 ></div>
                               ))}

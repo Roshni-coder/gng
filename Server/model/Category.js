@@ -6,10 +6,16 @@ const categorySchema = new mongoose.Schema({
         required: true,
         unique: true
     },
-    image: {
-        type: String, // Store image URL or filename
-        required: true
-    }
+    images: [{
+        url: {
+            type: String,
+            required: true
+        },
+        altText: {
+            type: String,
+            default: ''
+        }
+    }]
 });
 
 const Category = mongoose.model("Category", categorySchema);

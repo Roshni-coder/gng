@@ -24,13 +24,12 @@ const storage = multer.diskStorage({
   },
 });
 
-
 const upload = multer({ storage });
 
 // Add category
 router.post("/addcategory", upload.single("image"), async (req, res) => {
   try {
-    const { categoryname } = req.body;
+    const { categoryname, altText } = req.body;
     if (!categoryname) {
       return res.status(400).json({ success: false, message: "Category name is required" });
     }
@@ -40,7 +39,13 @@ router.post("/addcategory", upload.single("image"), async (req, res) => {
 
     const imagePath = `uploads/categories/${req.file.filename}`;
 
-    const newCategory = new Category({ categoryname, image: imagePath });
+    const newCategory = new Category({
+      categoryname,
+      images: [{
+        url: imagePath,
+        altText: altText || categoryname
+      }]
+    });
     await newCategory.save();
 
     res.status(200).json({
@@ -52,7 +57,6 @@ router.post("/addcategory", upload.single("image"), async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to add category" });
   }
 });
-
 
 router.get("/getcategories", async (req, res) => {
   try {
@@ -86,9 +90,14 @@ router.delete("/deletecategory/:id", async (req, res) => {
         .json({ success: false, message: "Category not found" });
     }
 
-    const imagePath = path.join(__dirname, `../${category.image}`);
-    if (fs.existsSync(imagePath)) {
-      fs.unlinkSync(imagePath);
+    // Delete all images in the images array
+    if (category.images && category.images.length > 0) {
+      category.images.forEach(img => {
+        const imagePath = path.join(__dirname, `../${img.url}`);
+        if (fs.existsSync(imagePath)) {
+          fs.unlinkSync(imagePath);
+        }
+      });
     }
 
     await Category.findByIdAndDelete(id);
@@ -106,13 +115,20 @@ router.delete("/deletecategory/:id", async (req, res) => {
 router.put("/updatecategory/:id", upload.single("image"), async (req, res) => {
   try {
     const { id } = req.params;
-    const { categoryname } = req.body;
+    const { categoryname, altText } = req.body;
 
-    let updateData = { categoryname };
+    let updateData = {};
+
+    if (categoryname) {
+      updateData.categoryname = categoryname;
+    }
 
     if (req.file) {
       const imagePath = `uploads/categories/${req.file.filename}`;
-      updateData.image = imagePath;
+      updateData.images = [{
+        url: imagePath,
+        altText: altText || categoryname
+      }];
     }
 
     const updatedCategory = await Category.findByIdAndUpdate(id, updateData, {
@@ -138,4 +154,5 @@ router.put("/updatecategory/:id", upload.single("image"), async (req, res) => {
       .json({ success: false, message: "Failed to update category" });
   }
 });
+
 export default router;

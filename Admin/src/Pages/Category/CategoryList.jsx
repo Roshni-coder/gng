@@ -118,8 +118,8 @@ function CategoryList() {
               <tr key={cat._id} className="border border-gray-200 border-gray-200">
                 <td className="px-6 py-2 border border-gray-200">
                   <img
-                    src={`${import.meta.env.VITE_BACKEND_URL}/${cat.image}`}
-                    alt="Category"
+                    src={`${import.meta.env.VITE_BACKEND_URL}/${cat.images && cat.images[0] ? cat.images[0].url : ''}`}
+                    alt={cat.images && cat.images[0] ? cat.images[0].altText : cat.categoryname}
                     className="w-[50px] h-[50px] object-cover rounded-full mx-auto cursor-pointer"
                     onClick={() => handleImageClick(cat._id)}
                   />
