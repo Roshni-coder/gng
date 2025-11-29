@@ -29,23 +29,29 @@ const NavCatSlider = () => {
     }
   };
 
-  // Helper function to construct image URL safely
-  const getCategoryImageUrl = (images) => {
-    // 1. Safety check: Ensure images array exists and has content
-    if (!images || images.length === 0 || !images[0].url) {
-      return "/fallback-category.png"; // Use a placeholder if missing
+  // ⭐ FIX: Smart URL Handler handles Array, String, Localhost, and Cloudinary
+  const getCategoryImageUrl = (category) => {
+    let imageUrl = "";
+
+    // 1. Check for new schema (images array)
+    if (category.images && category.images.length > 0) {
+      imageUrl = category.images[0].url;
+    }
+    // 2. Check for old schema (image string)
+    else if (category.image) {
+      imageUrl = category.image;
+    } else {
+      return "/fallback-category.png"; // Return placeholder if no image
     }
 
-    const imagePath = images[0].url;
-
-    // 2. If it is a Cloudinary URL (http/https), return it directly
-    if (imagePath.startsWith("http") || imagePath.startsWith("https")) {
-      return imagePath;
+    // 3. If it's a Cloudinary/External URL (starts with http), return as is
+    if (imageUrl.startsWith("http") || imageUrl.startsWith("https")) {
+      return imageUrl;
     }
 
-    // 3. Fallback for old local images: Append backend URL
+    // 4. If it's a local file, prepend backend URL
     const base = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "") || "";
-    const cleanPath = imagePath.replace(/^\/+/, ""); // Remove leading slash
+    const cleanPath = imageUrl.replace(/^\/+/, ""); // Remove leading slash
     return `${base}/${cleanPath}`;
   };
 
@@ -75,10 +81,8 @@ const NavCatSlider = () => {
               >
                 <div className="text-center mt-2 cursor-pointer">
                   <img
-                    // Pass the entire images array to the helper
-                    src={getCategoryImageUrl(category.images)}
+                    src={getCategoryImageUrl(category)} // ✅ Use smart helper
                     alt={category.categoryname}
-                    // Added w-16 h-16 for mobile default size to prevent invisible images
                     className="mx-auto sm:w-20 sm:h-20 w-16 h-16 rounded-full shadow-lg object-cover transition-transform hover:scale-105"
                   />
                   <h3 className="mt-2 hidden sm:block text-sm font-semibold text-gray-800">

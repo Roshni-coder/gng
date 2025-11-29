@@ -39,16 +39,20 @@ function MyCategories() {
     (cat.name || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Helper to handle both Cloudinary and Local images
+  // ⭐ FIX: Consistent image URL handling
   const getImageUrl = (imgUrl) => {
     if (!imgUrl) return null;
-    if (imgUrl.startsWith("http")) return imgUrl; // Cloudinary or external
-    return `${import.meta.env.VITE_BACKEND_URL}/${imgUrl.replace(/\\/g, "/")}`; // Local fallback
+    if (imgUrl.startsWith("http")) return imgUrl; // Cloudinary/External
+
+    // Local fallback
+    const base = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "") || "";
+    const cleanPath = imgUrl.replace(/^\/+/, "");
+    return `${base}/${cleanPath}`;
   };
 
   return (
     <div className="p-6 space-y-6 animate-fadeIn">
-      {/* Header */}
+      {/* Header and Stats... (Keep existing JSX) */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">My Categories</h1>
@@ -66,26 +70,7 @@ function MyCategories() {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl p-5 text-white">
-          <div className="flex items-center gap-2 mb-2 opacity-90">
-            <FiGrid className="text-xl" />
-            <span className="text-sm font-medium">Total Categories</span>
-          </div>
-          <h3 className="text-2xl font-bold">{data.categories.length}</h3>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-5">
-          <p className="text-sm text-gray-500">Total Products</p>
-          <h3 className="text-2xl font-bold text-gray-800 mt-1">{data.totalProducts}</h3>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-5">
-          <p className="text-sm text-gray-500">Avg. Products/Category</p>
-          <h3 className="text-2xl font-bold text-gray-800 mt-1">
-            {data.categories.length > 0 ? Math.round(data.totalProducts / data.categories.length) : 0}
-          </h3>
-        </div>
-      </div>
+      {/* Stats Grid... (Keep existing JSX) */}
 
       {/* Categories Grid */}
       {loading ? (
@@ -104,7 +89,8 @@ function MyCategories() {
             <div key={i} className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-shadow">
               <div className="flex items-start gap-4">
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl flex items-center justify-center overflow-hidden">
-                  {getImageUrl(category.image) ? (
+                  {/* ⭐ FIX: Use Helper Function */}
+                  {category.image ? (
                     <img
                       src={getImageUrl(category.image)}
                       alt={category.name}
@@ -115,8 +101,8 @@ function MyCategories() {
                       }}
                     />
                   ) : null}
-                  {/* Fallback Initial if image missing or fails to load */}
-                  <span className="text-2xl font-bold text-blue-400" style={{ display: getImageUrl(category.image) ? 'none' : 'block' }}>
+
+                  <span className="text-2xl font-bold text-blue-400" style={{ display: category.image ? 'none' : 'block' }}>
                     {category.name?.charAt(0) || 'C'}
                   </span>
                 </div>
