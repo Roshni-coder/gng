@@ -1,8 +1,11 @@
+
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 dotenv.config();
 import cookieParser from "cookie-parser";
+import path from "path";
+import { fileURLToPath } from "url";
 import connectDB from './config/mongobd.js';
 import connectcloudinary from "./config/cloudinary.js";
 import authRoutes from './routes/auth_routes.js';
@@ -20,6 +23,9 @@ import adminRoutes from "./routes/adminRoute.js";
 import productPerformanceRoutes from "./routes/productPerformanceRoutes.js";  // ✔ FIXED
 import sellerPanelRoutes from "./routes/sellerPanelRoutes.js";  // New Seller Panel Routes
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 
 
 const app = express();
@@ -35,7 +41,7 @@ app.use(cookieParser());
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-    const allowed = ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175','http://localhost:5176', 'http://giftngifts.in'];
+    const allowed = ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5176', 'http://giftngifts.in'];
     //  const allowed = ['*', 'http://srv814093.hstgr.cloud'];
     const hostname = new URL(origin).hostname;
     if (allowed.includes(origin) || hostname.endsWith('.ishisofttech.com')) {
@@ -49,13 +55,21 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+// // Add CORS headers for static uploads to allow cross-origin image loading
+// app.use('/uploads', (req, res, next) => {
+//   res.header('Access-Control-Allow-Origin', '*');
+//   res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+//   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+//   next();
+// }, express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Register routes
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/product', productRoutes); // ✅ New Product Routes
 app.use('/api/client', clientRoutes); // ✅ New Client Routes
 app.use('/api', uploadRoutes);
-app.use('/uploads', express.static('uploads'));
 app.use('/api', categoryRoutes);
 app.use('/api', subcategoryRoutes);
 app.use('/api/seller', sellerRoutes);

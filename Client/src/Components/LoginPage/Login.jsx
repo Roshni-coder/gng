@@ -67,12 +67,19 @@ const Login = () => {
         });
 
         if (data.success) {
-          toast.success("Account created successfully!");
-          setState("login");
-          // Optionally clear fields here
-          setName("");
-          setEmail("");
-          setPassword("");
+          // Auto-login: store token and user data
+          localStorage.setItem("token", data.token);
+          setIsLoggedin(true);
+          
+          if (data.user) {
+            setUserdata({
+              id: data.user.id,
+              name: data.user.name,
+              email: data.user.email,
+            });
+          }
+          
+          toast.success("Account created successfully! You are now logged in.");
           navigate("/");
         } else {
           toast.error(data.message);

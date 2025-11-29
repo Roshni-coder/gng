@@ -6,10 +6,13 @@ import Review from "../model/review.js";
 // Get My Categories (Categories seller has products in)
 export const getMyCategories = async (req, res) => {
   try {
-    const { sellerId } = req.body;
+    const sellerId = req.sellerId || req.body.sellerId;
 
     const products = await addproductmodel.find({ sellerId })
-      .populate("categoryname", "name image");
+      .populate("categoryname", "categoryname image");
+
+    // Get all orders for this seller
+    const orders = await orderModel.find({ "items.sellerId": sellerId });
 
     const categoryMap = {};
     products.forEach(product => {
@@ -18,11 +21,13 @@ export const getMyCategories = async (req, res) => {
         if (!categoryMap[catId]) {
           categoryMap[catId] = {
             _id: catId,
-            name: product.categoryname.name,
+            name: product.categoryname.categoryname,
             image: product.categoryname.image,
             productCount: 0,
             totalStock: 0,
             avgPrice: 0,
+            revenue: 0,
+            salesCount: 0,
             products: []
           };
         }
@@ -37,11 +42,29 @@ export const getMyCategories = async (req, res) => {
       }
     });
 
+    // Calculate revenue and sales from orders
+    orders.forEach(order => {
+      order.items.forEach(item => {
+        if (item.sellerId?.toString() === sellerId?.toString()) {
+          const product = products.find(p => p._id.toString() === item.productId?.toString());
+          if (product && product.categoryname) {
+            const catId = product.categoryname._id.toString();
+            if (categoryMap[catId]) {
+              categoryMap[catId].revenue += item.price * item.quantity;
+              categoryMap[catId].salesCount += item.quantity;
+            }
+          }
+        }
+      });
+    });
+
     // Calculate average price
     Object.values(categoryMap).forEach(cat => {
       const totalPrice = cat.products.reduce((acc, p) => acc + p.price, 0);
       cat.avgPrice = cat.productCount > 0 ? (totalPrice / cat.productCount).toFixed(2) : 0;
     });
+
+    console.log("Sending Categories:", JSON.stringify(Object.values(categoryMap), null, 2));
 
     res.status(200).json({
       success: true,
@@ -60,14 +83,14 @@ export const getMyCategories = async (req, res) => {
 // Get Category Performance
 export const getCategoryPerformance = async (req, res) => {
   try {
-    const { sellerId } = req.body;
+    const sellerId = req.sellerId || req.body.sellerId;
     const { period = "30" } = req.query;
 
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - parseInt(period));
 
     const products = await addproductmodel.find({ sellerId })
-      .populate("categoryname", "name");
+      .populate("categoryname", "categoryname");
 
     const orders = await orderModel.find({
       "items.sellerId": sellerId,
@@ -81,7 +104,7 @@ export const getCategoryPerformance = async (req, res) => {
     const categoryPerformance = {};
 
     products.forEach(product => {
-      const catName = product.categoryname?.name || "Uncategorized";
+      const catName = product.categoryname?.categoryname || "Uncategorized";
       const catId = product.categoryname?._id?.toString() || "uncategorized";
 
       if (!categoryPerformance[catId]) {
@@ -151,14 +174,14 @@ export const getCategoryPerformance = async (req, res) => {
 // Get Category Suggestions
 export const getCategorySuggestions = async (req, res) => {
   try {
-    const { sellerId } = req.body;
+    const sellerId = req.sellerId || req.body.sellerId;
 
     // Get all categories
     const allCategories = await Category.find();
 
     // Get seller's current categories
     const products = await addproductmodel.find({ sellerId })
-      .populate("categoryname", "name");
+      .populate("categoryname", "categoryname");
 
     const sellerCategoryIds = new Set(
       products.map(p => p.categoryname?._id?.toString()).filter(Boolean)
@@ -169,7 +192,7 @@ export const getCategorySuggestions = async (req, res) => {
       .filter(cat => !sellerCategoryIds.has(cat._id.toString()))
       .map(cat => ({
         _id: cat._id,
-        name: cat.name,
+        name: cat.categoryname,
         image: cat.image,
         reason: "Expand your product range"
       }));

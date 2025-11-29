@@ -7,7 +7,7 @@ import Category from "../model/Category.js";
 const getDateRange = (period) => {
   const endDate = new Date();
   const startDate = new Date();
-  
+
   switch (period) {
     case 'week':
       startDate.setDate(startDate.getDate() - 7);
@@ -24,7 +24,7 @@ const getDateRange = (period) => {
     default:
       startDate.setDate(startDate.getDate() - 7);
   }
-  
+
   return { startDate, endDate };
 };
 
@@ -70,13 +70,13 @@ export const getRevenueAnalytics = async (req, res) => {
     }
 
     orders.forEach(order => {
-      const sellerItems = order.items.filter(item => 
+      const sellerItems = order.items.filter(item =>
         item.sellerId?.toString() === sellerId?.toString()
       );
-      
+
       if (sellerItems.length > 0) {
         totalOrders++;
-        
+
         sellerItems.forEach(item => {
           const revenue = item.price * item.quantity;
           totalRevenue += revenue;
@@ -103,7 +103,7 @@ export const getRevenueAnalytics = async (req, res) => {
     const prevStartDate = new Date(startDate);
     const prevEndDate = new Date(startDate);
     prevEndDate.setDate(prevEndDate.getDate() - 1);
-    
+
     switch (period) {
       case 'week':
         prevStartDate.setDate(prevStartDate.getDate() - 7);
@@ -127,7 +127,7 @@ export const getRevenueAnalytics = async (req, res) => {
     let prevRevenue = 0;
     let prevOrderCount = 0;
     prevOrders.forEach(order => {
-      const sellerItems = order.items.filter(item => 
+      const sellerItems = order.items.filter(item =>
         item.sellerId?.toString() === sellerId?.toString()
       );
       if (sellerItems.length > 0) {
@@ -136,8 +136,8 @@ export const getRevenueAnalytics = async (req, res) => {
       }
     });
 
-    const growth = prevRevenue > 0 
-      ? parseFloat(((totalRevenue - prevRevenue) / prevRevenue * 100).toFixed(1)) 
+    const growth = prevRevenue > 0
+      ? parseFloat(((totalRevenue - prevRevenue) / prevRevenue * 100).toFixed(1))
       : (totalRevenue > 0 ? 100 : 0);
 
     const ordersGrowth = prevOrderCount > 0
@@ -177,12 +177,12 @@ export const getProductAnalytics = async (req, res) => {
 
     // Aggregate product sales
     const productSales = {};
-    
+
     orders.forEach(order => {
-      const sellerItems = order.items.filter(item => 
+      const sellerItems = order.items.filter(item =>
         item.sellerId?.toString() === sellerId?.toString()
       );
-      
+
       sellerItems.forEach(item => {
         const productName = item.name || "Unknown Product";
         if (!productSales[productName]) {
@@ -243,7 +243,7 @@ export const getTrafficInsights = async (req, res) => {
 
     // Get products and orders for traffic estimation
     const products = await addproductmodel.find({ sellerId });
-    const orders = await orderModel.find({ 
+    const orders = await orderModel.find({
       "items.sellerId": sellerId,
       placedAt: { $gte: startDate, $lte: endDate }
     });
@@ -251,7 +251,7 @@ export const getTrafficInsights = async (req, res) => {
     // Calculate estimated traffic based on orders (since we don't have real analytics)
     const totalOrders = orders.length;
     const estimatedVisitors = totalOrders * 15; // Assume 15 visitors per order
-    const conversionRate = estimatedVisitors > 0 
+    const conversionRate = estimatedVisitors > 0
       ? parseFloat(((totalOrders / estimatedVisitors) * 100).toFixed(1))
       : 0;
 
@@ -294,7 +294,7 @@ export const getConversionReports = async (req, res) => {
     });
 
     const productConversion = products.map(product => {
-      const productOrders = orders.filter(o => 
+      const productOrders = orders.filter(o =>
         o.items.some(i => i.productId?.toString() === product._id.toString())
       );
       const orderCount = productOrders.length;
@@ -379,11 +379,11 @@ export const exportData = async (req, res) => {
 
       case "products":
         const products = await addproductmodel.find({ sellerId })
-          .populate("categoryname", "name");
+          .populate("categoryname", "categoryname");
         data = products.map(p => ({
           productId: p._id,
           title: p.title,
-          category: p.categoryname?.name,
+          category: p.categoryname?.categoryname,
           price: p.price,
           oldPrice: p.oldprice,
           discount: p.discount,
@@ -444,7 +444,7 @@ export const getInventoryReports = async (req, res) => {
     const sellerId = req.sellerId || req.body.sellerId;
 
     const products = await addproductmodel.find({ sellerId })
-      .populate("categoryname", "name");
+      .populate("categoryname", "categoryname");
 
     const inventory = {
       totalProducts: products.length,
@@ -459,7 +459,7 @@ export const getInventoryReports = async (req, res) => {
       _id: p._id,
       title: p.title,
       image: p.images?.[0]?.url,
-      category: p.categoryname?.name || "Uncategorized",
+      category: p.categoryname?.categoryname || "Uncategorized",
       price: p.price,
       stock: p.stock,
       availability: p.availability,
@@ -469,7 +469,7 @@ export const getInventoryReports = async (req, res) => {
 
     const categoryBreakdown = {};
     products.forEach(p => {
-      const catName = p.categoryname?.name || "Uncategorized";
+      const catName = p.categoryname?.categoryname || "Uncategorized";
       if (!categoryBreakdown[catName]) {
         categoryBreakdown[catName] = { count: 0, totalStock: 0, value: 0 };
       }

@@ -11,7 +11,9 @@ export const AppContextProvider = (props) => {
   const backendurl = import.meta.env.VITE_BACKEND_URL || "http://localhost:7000";
 
   const [isLoggedin, setIsLoggedin] = useState(false);
-  const [userData, setUserdata] = useState(false);
+  // const [userData, setUserdata] = useState(false);
+  const [userData, setUserdata] = useState(null);
+
   const [profile, setProfile] = useState({ name: '', phone: '', email: '' });
 
   const [cartItems, setCartItems] = useState([]);
@@ -85,20 +87,19 @@ export const AppContextProvider = (props) => {
       console.error("Error fetching cart:", err);
     }
   };
+const clearCartAfterOrder = async () => {
+  if (!token) return;
+  setCartItems([]);
+  try {
+    await axios.delete(`${backendurl}/api/auth/clear-cart`, {
+      headers: authHeader,
+    });
+    await fetchCart();
+  } catch (err) {
+    console.error("Error clearing backend cart:", err);
+  }
+};
 
-  // Clear cart after order
-  const clearCartAfterOrder = async () => {
-    if (!token) return;
-    setCartItems([]);
-    try {
-      await axios.delete(`${backendurl}/api/auth/clear-cart`, {
-        headers: authHeader,
-      });
-      await fetchCart();
-    } catch (err) {
-      console.error("Error clearing backend cart:", err);
-    }
-  };
 
   // Fetch Wishlist
   const fetchWishlist = async () => {
@@ -134,6 +135,15 @@ export const AppContextProvider = (props) => {
   };
 
   useEffect(() => {
+     const savedToken = localStorage.getItem("token");
+
+  if (savedToken) {
+    setIsLoggedin(true);
+    getuserData();       // fetch user details
+    fetchCart();         // fetch cart
+    fetchWishlist();     // fetch wishlist
+  }
+
     getAuthstate();
   }, []);
 

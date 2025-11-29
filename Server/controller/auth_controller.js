@@ -118,18 +118,30 @@ export const register = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    //send welcome email--
+    //send welcome email (non-blocking - don't wait for it)
     const mailOption = {
       from: process.env.SENDER_EMAIL,
       to: email,
-      subject: "Welcome to ishisoft",
-      text: `welcome to ishisoft website. your account has been created with email id: ${email}`,
+      subject: "Welcome to GiftNGifts",
+      text: `Welcome to GiftNGifts! Your account has been created successfully with email: ${email}`,
     };
 
-    //sending a email-
-    await transporter.sendMail(mailOption);
+    // Send email in background - don't block registration
+    transporter.sendMail(mailOption).catch(err => {
+      console.log("Welcome email failed:", err.message);
+    });
 
-    return res.json({ success: true, token });
+    // Return success with user data for auto-login
+    return res.json({ 
+      success: true, 
+      token,
+      message: "Account created successfully!",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email
+      }
+    });
   } catch (error) {
     res.json({
       success: false,

@@ -1,22 +1,31 @@
 import express from "express";
-import upload  from "../middleware/multer.js";
-import Product from "../model/addproduct.js"
+import upload from "../middleware/multer.js";
+import Product from "../model/addproduct.js";
+
 const router = express.Router();
 
+// Upload up to 5 images for a product
 router.post("/uploads", upload.array("images", 5), async (req, res) => {
   try {
-    if (req.files.length !== 5) {
-      return res.status(400).json({ error: "You must upload exactly 2 images." });
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: "No images uploaded." });
     }
 
-    const fileNames = req.files.map((file) => file.filename);
+    // Convert filenames → relative URLs
+    const imagePaths = req.files.map((file) => `uploads/products/${file.filename}`);
 
-    const savedImage = await Product.create({ images: fileNames });
+    // Save product images to DB
+    const savedImage = await Product.create({ images: imagePaths });
 
-    res.json({ message: "Images uploaded and saved successfully!", document: savedImage });
+    res.json({
+      success: true,
+      message: "Images uploaded and saved successfully!",
+      document: savedImage,
+    });
   } catch (error) {
+    console.error("Upload error:", error);
     res.status(500).json({ error: "Error uploading images" });
   }
 });
 
-export default router; 
+export default router;

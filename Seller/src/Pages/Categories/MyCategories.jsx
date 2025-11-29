@@ -23,9 +23,13 @@ function MyCategories() {
         const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/seller-panel/categories/my-categories`, {
           headers: { stoken }
         });
-        if (res.data.success) setData(res.data.data);
+        console.log("API Response:", res.data);
+        if (res.data.success) {
+          console.log("Categories data:", res.data.data);
+          setData(res.data.data);
+        }
       } catch (err) {
-        console.error(err);
+        console.error("Fetch error:", err);
       } finally {
         setLoading(false);
       }
@@ -33,8 +37,8 @@ function MyCategories() {
     fetchData();
   }, []);
 
-  const filteredCategories = data.categories.filter(cat => 
-    cat.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredCategories = data.categories.filter(cat =>
+    (cat.name || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -96,9 +100,20 @@ function MyCategories() {
               <div className="flex items-start gap-4">
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl flex items-center justify-center overflow-hidden">
                   {category.image ? (
-                    <img src={category.image} alt={category.name} className="w-full h-full object-cover" />
+                    <img
+                      src={category.image.startsWith('http') 
+                        ? category.image 
+                        : `${import.meta.env.VITE_BACKEND_URL}/${category.image.replace(/\\/g, "/")}`}
+                      alt={category.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.style.display = 'none';
+                        e.target.parentElement.innerHTML = `<span class="text-2xl text-blue-400">${category.name?.charAt(0) || 'C'}</span>`;
+                      }}
+                    />
                   ) : (
-                    <MdCategory className="text-3xl text-blue-500" />
+                    <span className="text-2xl font-bold text-blue-400">{category.name?.charAt(0) || 'C'}</span>
                   )}
                 </div>
                 <div className="flex-1">
@@ -106,7 +121,7 @@ function MyCategories() {
                   <p className="text-sm text-gray-500 mt-1">{category.productCount} products</p>
                 </div>
               </div>
-              
+
               <div className="mt-4 pt-4 border-t border-gray-100">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>

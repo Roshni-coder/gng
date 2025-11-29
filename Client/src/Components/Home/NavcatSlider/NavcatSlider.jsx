@@ -15,9 +15,10 @@ const NavCatSlider = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/getcategories`);
+      const response = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/getcategories`
+      );
 
-      // Ensure correct structure
       const categoryArray = Array.isArray(response.data)
         ? response.data
         : response.data.categories || [];
@@ -26,6 +27,20 @@ const NavCatSlider = () => {
     } catch (error) {
       console.error("Error fetching categories", error);
     }
+  };
+
+  // ⭐ FIX: Function must be inside component BEFORE return
+  const getCategoryImageUrl = (imagePath) => {
+    if (!imagePath) return "/fallback-category.png";
+
+    if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
+      return imagePath;
+    }
+
+    const base = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "") || "";
+    const cleanPath = imagePath.replace(/^\/+/, "");
+
+    return `${base}/${cleanPath}`;
   };
 
   return (
@@ -45,20 +60,18 @@ const NavCatSlider = () => {
             768: { slidesPerView: 7 },
             900: { slidesPerView: 8 },
           }}
-          className="mySwiper"
         >
           {categories.map((category, index) => (
             <SwiperSlide key={index}>
-              {/* 🟣 Use Link like in ProductSlider — passing state to ProductList */}
               <Link
                 to="/productlist"
                 state={{ category: category.categoryname }}
               >
                 <div className="text-center mt-2 cursor-pointer">
                   <img
-                    src={`${import.meta.env.VITE_BACKEND_URL}/${category.image}`}
+                    src={getCategoryImageUrl(category.image)}
                     alt={category.categoryname}
-                    className="mx-auto sm:w-20 sm:h-20 lg:w-25 md:h-25 md:w-25 lg:h-25 w-18 h-18 rounded-full shadow-lg object-cover transition-transform duration-300 hover:scale-105"
+                    className="mx-auto sm:w-20 sm:h-20 rounded-full shadow-lg object-cover transition-transform hover:scale-105"
                   />
                   <h3 className="mt-2 hidden sm:block text-sm font-semibold text-gray-800">
                     {category.categoryname}

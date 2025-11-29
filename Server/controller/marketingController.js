@@ -43,12 +43,12 @@ export const getCoupons = async (req, res) => {
 export const createCoupon = async (req, res) => {
   try {
     const sellerId = req.sellerId || req.body.sellerId;
-    const { 
-      code, 
-      description, 
-      discountType, 
-      discountValue, 
-      minOrderValue, 
+    const {
+      code,
+      description,
+      discountType,
+      discountValue,
+      minOrderValue,
       maxDiscount,
       usageLimit,
       validFrom,
@@ -157,7 +157,7 @@ export const getStoreDiscounts = async (req, res) => {
     const sellerId = req.sellerId || req.body.sellerId;
 
     const products = await addproductmodel.find({ sellerId })
-      .populate("categoryname", "name");
+      .populate("categoryname", "categoryname");
 
     const discountedProducts = products.filter(p => p.discount > 0);
     const fullPriceProducts = products.filter(p => !p.discount || p.discount === 0);
@@ -182,7 +182,7 @@ export const getStoreDiscounts = async (req, res) => {
           _id: p._id,
           title: p.title,
           image: p.images?.[0]?.url,
-          category: p.categoryname?.name || "Uncategorized",
+          category: p.categoryname?.categoryname || "Uncategorized",
           price: p.price,
           oldPrice: p.oldprice,
           discount: p.discount || 0,
@@ -193,7 +193,7 @@ export const getStoreDiscounts = async (req, res) => {
           totalProducts: products.length,
           discountedCount: discountedProducts.length,
           fullPriceCount: fullPriceProducts.length,
-          avgDiscount: discountedProducts.length > 0 
+          avgDiscount: discountedProducts.length > 0
             ? parseFloat((discountedProducts.reduce((acc, p) => acc + p.discount, 0) / discountedProducts.length).toFixed(1))
             : 0,
           totalSavings,
@@ -274,9 +274,9 @@ export const bulkUpdateDiscounts = async (req, res) => {
       await product.save();
     }
 
-    res.status(200).json({ 
-      success: true, 
-      message: `Discount ${action === 'apply' ? 'applied to' : 'removed from'} ${products.length} products` 
+    res.status(200).json({
+      success: true,
+      message: `Discount ${action === 'apply' ? 'applied to' : 'removed from'} ${products.length} products`
     });
   } catch (error) {
     console.error("Bulk Update Discounts Error:", error);
@@ -345,7 +345,7 @@ export const getCampaigns = async (req, res) => {
 
     const campaigns = await MarketingCampaign.find(query)
       .populate('targeting.products', 'title images price')
-      .populate('targeting.categories', 'name')
+      .populate('targeting.categories', 'categoryname')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -563,7 +563,7 @@ export const getFeaturedProducts = async (req, res) => {
     const sellerId = req.sellerId || req.body.sellerId;
 
     const products = await addproductmodel.find({ sellerId })
-      .populate("categoryname", "name");
+      .populate("categoryname", "categoryname");
 
     const featured = products.filter(p => p.approved && p.stock > 10);
 
@@ -574,7 +574,7 @@ export const getFeaturedProducts = async (req, res) => {
           _id: p._id,
           title: p.title,
           image: p.images?.[0]?.url,
-          category: p.categoryname?.name,
+          category: p.categoryname?.categoryname,
           price: p.price,
           stock: p.stock,
           isFeatured: true
@@ -583,7 +583,7 @@ export const getFeaturedProducts = async (req, res) => {
           _id: p._id,
           title: p.title,
           image: p.images?.[0]?.url,
-          category: p.categoryname?.name,
+          category: p.categoryname?.categoryname,
           price: p.price,
           stock: p.stock,
           approved: p.approved
