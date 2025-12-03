@@ -20,9 +20,25 @@ const storeSettingsSchema = new mongoose.Schema({
   storeBanner: {
     type: String
   },
+  storeEmail: {
+    type: String
+  },
+  storePhone: {
+    type: String
+  },
+  storeAddress: {
+    type: String
+  },
   storeTheme: {
     primaryColor: { type: String, default: "#3B82F6" },
-    secondaryColor: { type: String, default: "#1E40AF" }
+    secondaryColor: { type: String, default: "#8B5CF6" },
+    accentColor: { type: String, default: "#10B981" },
+    fontFamily: { type: String, default: "Inter" },
+    layout: { type: String, default: "grid" },
+    headerStyle: { type: String, default: "modern" },
+    showBanner: { type: Boolean, default: true },
+    showFeaturedProducts: { type: Boolean, default: true },
+    productsPerRow: { type: Number, default: 4 }
   },
   businessInfo: {
     businessName: String,
@@ -30,7 +46,12 @@ const storeSettingsSchema = new mongoose.Schema({
     gstNumber: String,
     panNumber: String,
     registrationNumber: String,
-    yearEstablished: Number
+    yearEstablished: Number,
+    businessAddress: String,
+    businessCity: String,
+    businessState: String,
+    businessPincode: String,
+    businessCountry: String
   },
   contactInfo: {
     email: String,
@@ -51,9 +72,11 @@ const storeSettingsSchema = new mongoose.Schema({
   },
   holidayMode: {
     isEnabled: { type: Boolean, default: false },
-    message: String,
+    message: { type: String, default: "We're currently on a break and will be back soon!" },
     startDate: Date,
-    endDate: Date
+    endDate: Date,
+    autoReplyEnabled: { type: Boolean, default: true },
+    autoReplyMessage: { type: String, default: "Thank you for your message. We're currently on holiday and will respond when we return." }
   },
   verificationStatus: {
     isVerified: { type: Boolean, default: false },

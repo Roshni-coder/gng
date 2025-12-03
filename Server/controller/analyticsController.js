@@ -443,30 +443,120 @@ export const getInventoryReports = async (req, res) => {
   try {
     const sellerId = req.sellerId || req.body.sellerId;
 
+    // Fetch all products for this seller
     const products = await addproductmodel.find({ sellerId })
       .populate("categoryname", "categoryname");
 
-    const inventory = {
-      totalProducts: products.length,
-      inStock: products.filter(p => p.availability === "In Stock").length,
-      lowStock: products.filter(p => p.availability === "Low Stock").length,
-      outOfStock: products.filter(p => p.availability === "Out of Stock").length,
-      totalStockValue: products.reduce((acc, p) => acc + (p.stock * p.price), 0),
-      avgStockLevel: products.length > 0 ? (products.reduce((acc, p) => acc + p.stock, 0) / products.length).toFixed(0) : 0
-    };
+    // Calculate inventory summary
+    const totalProducts = products.length;
+    const inStock = products.filter(p => p.availability === "In Stock").length;
+    const lowStock = products.filter(p => p.availability === "Low Stock").length;
+    const outOfStock = products.filter(p => p.availability === "Out of Stock").length;
+    const inventoryValue = products.reduce((acc, p) => acc + (p.stock * p.price), 0);
 
-    const productDetails = products.map(p => ({
-      _id: p._id,
-      title: p.title,
-      image: p.images?.[0]?.url,
-      category: p.categoryname?.categoryname || "Uncategorized",
-      price: p.price,
-      stock: p.stock,
-      availability: p.availability,
-      stockValue: p.stock * p.price,
-      approved: p.approved
-    })).sort((a, b) => a.stock - b.stock);
+    // Get orders from last 30 days to calculate product movement
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+    const recentOrders = await orderModel.find({
+      "items.sellerId": sellerId,
+      placedAt: { $gte: thirtyDaysAgo }
+    });
+
+    // Calculate sales per product
+    const productSales = {};
+    const productLastSold = {};
+
+    recentOrders.forEach(order => {
+      order.items.forEach(item => {
+        if (item.sellerId?.toString() === sellerId?.toString()) {
+          const productId = item.productId?.toString();
+          if (productId) {
+            productSales[productId] = (productSales[productId] || 0) + item.quantity;
+            // Track last sold date
+            if (!productLastSold[productId] || order.placedAt > productLastSold[productId]) {
+              productLastSold[productId] = order.placedAt;
+            }
+          }
+        }
+      });
+    });
+
+    // Get all orders to find historical last sold dates for products not sold recently
+    const allOrders = await orderModel.find({
+      "items.sellerId": sellerId
+    }).sort({ placedAt: -1 });
+
+    allOrders.forEach(order => {
+      order.items.forEach(item => {
+        if (item.sellerId?.toString() === sellerId?.toString()) {
+          const productId = item.productId?.toString();
+          if (productId && !productLastSold[productId]) {
+            productLastSold[productId] = order.placedAt;
+          }
+        }
+      });
+    });
+
+    // Build low stock products list
+    const lowStockProducts = products
+      .filter(p => p.availability === "Low Stock" || p.availability === "Out of Stock")
+      .map(p => ({
+        _id: p._id,
+        name: p.title,
+        image: p.images?.[0]?.url || null,
+        sku: p._id.toString().slice(-8).toUpperCase(),
+        stock: p.stock,
+        minStock: 5,
+        category: p.categoryname?.categoryname || "Uncategorized"
+      }))
+      .sort((a, b) => a.stock - b.stock)
+      .slice(0, 10);
+
+    // Build top moving (fast selling) products
+    const topMovingProducts = products
+      .map(p => {
+        const soldCount = productSales[p._id.toString()] || 0;
+        return {
+          _id: p._id,
+          name: p.title,
+          image: p.images?.[0]?.url || null,
+          soldCount,
+          growth: soldCount > 0 ? Math.min(Math.round((soldCount / 10) * 100), 100) : 0,
+          stock: p.stock
+        };
+      })
+      .filter(p => p.soldCount > 0)
+      .sort((a, b) => b.soldCount - a.soldCount)
+      .slice(0, 5);
+
+    // Build slow moving products (products with no or very few sales)
+    const slowMovingProducts = products
+      .map(p => {
+        const productId = p._id.toString();
+        const soldCount = productSales[productId] || 0;
+        const lastSoldDate = productLastSold[productId];
+        const daysSinceLastSale = lastSoldDate 
+          ? Math.floor((new Date() - new Date(lastSoldDate)) / (1000 * 60 * 60 * 24))
+          : 999;
+
+        return {
+          _id: p._id,
+          name: p.title,
+          image: p.images?.[0]?.url || null,
+          stock: p.stock,
+          soldCount,
+          lastSold: lastSoldDate 
+            ? new Date(lastSoldDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+            : 'Never',
+          daysSinceLastSale: daysSinceLastSale > 30 ? 30 : daysSinceLastSale
+        };
+      })
+      .filter(p => p.stock > 0 && p.soldCount === 0)
+      .sort((a, b) => b.daysSinceLastSale - a.daysSinceLastSale)
+      .slice(0, 5);
+
+    // Category breakdown
     const categoryBreakdown = {};
     products.forEach(p => {
       const catName = p.categoryname?.categoryname || "Uncategorized";
@@ -481,15 +571,17 @@ export const getInventoryReports = async (req, res) => {
     res.status(200).json({
       success: true,
       data: {
-        summary: inventory,
-        products: productDetails,
+        totalProducts,
+        inStock,
+        lowStock,
+        outOfStock,
+        inventoryValue,
+        lowStockProducts,
+        topMovingProducts,
+        slowMovingProducts,
         categoryBreakdown: Object.entries(categoryBreakdown)
           .map(([name, data]) => ({ name, ...data }))
-          .sort((a, b) => b.value - a.value),
-        alerts: {
-          outOfStock: productDetails.filter(p => p.availability === "Out of Stock"),
-          lowStock: productDetails.filter(p => p.availability === "Low Stock")
-        }
+          .sort((a, b) => b.value - a.value)
       }
     });
   } catch (error) {

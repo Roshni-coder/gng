@@ -7,7 +7,7 @@ import Review from "../model/review.js";
 // Get Store Settings
 export const getStoreSettings = async (req, res) => {
   try {
-    const { sellerId } = req.body;
+    const sellerId = req.sellerId || req.body.sellerId;
     
     let settings = await StoreSettingsModel.findOne({ sellerId });
     const seller = await sellermodel.findById(sellerId);
@@ -32,7 +32,8 @@ export const getStoreSettings = async (req, res) => {
 // Update Store Settings
 export const updateStoreSettings = async (req, res) => {
   try {
-    const { sellerId, ...updateData } = req.body;
+    const sellerId = req.sellerId || req.body.sellerId;
+    const updateData = req.body;
 
     let settings = await StoreSettingsModel.findOne({ sellerId });
 
@@ -54,7 +55,7 @@ export const updateStoreSettings = async (req, res) => {
 // Get Business Info
 export const getBusinessInfo = async (req, res) => {
   try {
-    const { sellerId } = req.body;
+    const sellerId = req.sellerId || req.body.sellerId;
     
     const settings = await StoreSettingsModel.findOne({ sellerId });
 
@@ -71,7 +72,8 @@ export const getBusinessInfo = async (req, res) => {
 // Update Business Info
 export const updateBusinessInfo = async (req, res) => {
   try {
-    const { sellerId, businessInfo } = req.body;
+    const sellerId = req.sellerId || req.body.sellerId;
+    const { businessInfo } = req.body;
 
     let settings = await StoreSettingsModel.findOne({ sellerId });
 
@@ -97,7 +99,7 @@ export const updateBusinessInfo = async (req, res) => {
 // Get Store Customization
 export const getStoreCustomization = async (req, res) => {
   try {
-    const { sellerId } = req.body;
+    const sellerId = req.sellerId || req.body.sellerId;
     
     const settings = await StoreSettingsModel.findOne({ sellerId });
 
@@ -120,7 +122,8 @@ export const getStoreCustomization = async (req, res) => {
 // Update Store Customization
 export const updateStoreCustomization = async (req, res) => {
   try {
-    const { sellerId, storeLogo, storeBanner, storeTheme, socialLinks, policies } = req.body;
+    const sellerId = req.sellerId || req.body.sellerId;
+    const { storeLogo, storeBanner, storeTheme, socialLinks, policies } = req.body;
 
     let settings = await StoreSettingsModel.findOne({ sellerId });
 
@@ -154,7 +157,7 @@ export const updateStoreCustomization = async (req, res) => {
 // Get Holiday Mode Status
 export const getHolidayMode = async (req, res) => {
   try {
-    const { sellerId } = req.body;
+    const sellerId = req.sellerId || req.body.sellerId;
     
     const settings = await StoreSettingsModel.findOne({ sellerId });
     const seller = await sellermodel.findById(sellerId);
@@ -175,7 +178,8 @@ export const getHolidayMode = async (req, res) => {
 // Update Holiday Mode
 export const updateHolidayMode = async (req, res) => {
   try {
-    const { sellerId, holidayMode } = req.body;
+    const sellerId = req.sellerId || req.body.sellerId;
+    const { holidayMode } = req.body;
 
     // Update in seller model
     await sellermodel.findByIdAndUpdate(sellerId, { holidayMode: holidayMode.isEnabled });
@@ -204,7 +208,7 @@ export const updateHolidayMode = async (req, res) => {
 // Get Store Performance
 export const getStorePerformance = async (req, res) => {
   try {
-    const { sellerId } = req.body;
+    const sellerId = req.sellerId || req.body.sellerId;
     const { period = "30" } = req.query; // days
 
     const startDate = new Date();
@@ -277,7 +281,7 @@ export const getStorePerformance = async (req, res) => {
 // Get Verification Status
 export const getVerificationStatus = async (req, res) => {
   try {
-    const { sellerId } = req.body;
+    const sellerId = req.sellerId || req.body.sellerId;
     
     const settings = await StoreSettingsModel.findOne({ sellerId });
     const seller = await sellermodel.findById(sellerId);
@@ -302,7 +306,8 @@ export const getVerificationStatus = async (req, res) => {
 // Submit Verification Documents
 export const submitVerificationDocuments = async (req, res) => {
   try {
-    const { sellerId, documents } = req.body;
+    const sellerId = req.sellerId || req.body.sellerId;
+    const { documents } = req.body;
 
     let settings = await StoreSettingsModel.findOne({ sellerId });
 

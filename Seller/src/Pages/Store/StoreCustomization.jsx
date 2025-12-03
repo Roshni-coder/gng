@@ -26,8 +26,8 @@ function StoreCustomization() {
         const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/seller-panel/store/customization`, {
           headers: { stoken }
         });
-        if (res.data.success && res.data.data) {
-          setSettings(res.data.data);
+        if (res.data.success && res.data.data?.storeTheme) {
+          setSettings(prev => ({ ...prev, ...res.data.data.storeTheme }));
         }
       } catch (err) {
         console.error(err);
@@ -41,9 +41,10 @@ function StoreCustomization() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/seller-panel/store/customization`, settings, {
-        headers: { stoken }
-      });
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/seller-panel/store/customization`, 
+        { storeTheme: settings }, 
+        { headers: { stoken } }
+      );
       if (res.data.success) {
         setEditing(false);
         alert("Customization saved successfully!");

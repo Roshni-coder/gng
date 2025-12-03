@@ -42,9 +42,10 @@ function BusinessInfo() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/seller-panel/store/business-info`, info, {
-        headers: { stoken }
-      });
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/seller-panel/store/business-info`, 
+        { businessInfo: info },
+        { headers: { stoken } }
+      );
       if (res.data.success) {
         setEditing(false);
         alert("Business info saved successfully!");

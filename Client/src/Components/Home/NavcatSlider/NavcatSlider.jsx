@@ -34,25 +34,21 @@ const NavCatSlider = () => {
     let imageUrl = "";
 
     // 1. Check for new schema (images array)
-    if (category.images && category.images.length > 0) {
-      imageUrl = category.images[0].url;
-    }
+
     // 2. Check for old schema (image string)
-    else if (category.image) {
+    if (category.image) {
       imageUrl = category.image;
-    } else {
-      return "/fallback-category.png"; // Return placeholder if no image
     }
 
     // 3. If it's a Cloudinary/External URL (starts with http), return as is
     if (imageUrl.startsWith("http") || imageUrl.startsWith("https")) {
       return imageUrl;
+    } else {
+      return "/fallback-category.png";
     }
 
     // 4. If it's a local file, prepend backend URL
-    const base = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "") || "";
-    const cleanPath = imageUrl.replace(/^\/+/, ""); // Remove leading slash
-    return `${base}/${cleanPath}`;
+
   };
 
   return (

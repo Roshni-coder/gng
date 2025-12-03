@@ -24,10 +24,16 @@ function VerificationStatus() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/seller-panel/store/verification-status`, {
+        const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/seller-panel/store/verification`, {
           headers: { stoken }
         });
-        if (res.data.success) setData(prev => ({ ...prev, ...res.data.data }));
+        if (res.data.success && res.data.data) {
+          setData(prev => ({ 
+            ...prev, 
+            status: res.data.data.isApproved ? 'Verified' : 'Pending',
+            ...res.data.data.verificationStatus
+          }));
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -52,7 +58,7 @@ function VerificationStatus() {
 
       try {
         const res = await axios.post(
-          `${import.meta.env.VITE_BACKEND_URL}/api/seller-panel/store/submit-verification`,
+          `${import.meta.env.VITE_BACKEND_URL}/api/seller-panel/store/verification`,
           formData,
           { headers: { stoken, 'Content-Type': 'multipart/form-data' } }
         );

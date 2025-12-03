@@ -22,11 +22,15 @@ function HolidayMode() {
         const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/seller-panel/store/holiday-mode`, {
           headers: { stoken }
         });
-        if (res.data.success && res.data.data) {
+        if (res.data.success && res.data.data?.holidayMode) {
+          const hm = res.data.data.holidayMode;
           setSettings({
-            ...res.data.data,
-            startDate: res.data.data.startDate ? new Date(res.data.data.startDate).toISOString().split('T')[0] : "",
-            endDate: res.data.data.endDate ? new Date(res.data.data.endDate).toISOString().split('T')[0] : ""
+            isEnabled: hm.isEnabled || false,
+            startDate: hm.startDate ? new Date(hm.startDate).toISOString().split('T')[0] : "",
+            endDate: hm.endDate ? new Date(hm.endDate).toISOString().split('T')[0] : "",
+            message: hm.message || "We're currently on a break and will be back soon!",
+            autoReplyEnabled: hm.autoReplyEnabled ?? true,
+            autoReplyMessage: hm.autoReplyMessage || "Thank you for your message. We're currently on holiday and will respond when we return."
           });
         }
       } catch (err) {
@@ -41,9 +45,10 @@ function HolidayMode() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/seller-panel/store/holiday-mode`, settings, {
-        headers: { stoken }
-      });
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/seller-panel/store/holiday-mode`, 
+        { holidayMode: settings }, 
+        { headers: { stoken } }
+      );
       if (res.data.success) {
         alert("Holiday mode settings saved!");
       }
